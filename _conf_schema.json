@@ -1,0 +1,43 @@
+{
+  "channels": {
+    "description": "要监控的 Discord 频道列表",
+    "type": "template_list",
+    "hint": "配置需要监控的 Discord 频道。支持论坛频道和普通文字频道。",
+    "templates": {
+      "channel": {
+        "name": "频道配置",
+        "hint": "添加一个 Discord 频道",
+        "items": {
+          "channel_id": {
+            "description": "频道 ID",
+            "type": "string",
+            "hint": "Discord 频道 ID。在 Discord 中右键频道 -> 复制ID（需开启开发者模式）"
+          },
+          "channel_name": {
+            "description": "频道显示名称",
+            "type": "string",
+            "hint": "用于在搜索结果中显示的频道名称，如卡组推荐、攻略分享"
+          },
+          "is_forum": {
+            "description": "是否为论坛频道",
+            "type": "bool",
+            "default": false,
+            "hint": "论坛频道的帖子标题是 Thread Name，普通频道用消息内容作为标题"
+          }
+        }
+      }
+    }
+  },
+  "refresh_interval": {
+    "description": "缓存刷新间隔（秒）",
+    "type": "int",
+    "default": 600,
+    "hint": "后台自动刷新 Discord 帖子缓存的时间间隔。默认 600 秒（10分钟）。建议 300~1800。"
+  },
+  "max_posts_per_channel": {
+    "description": "每个频道最大缓存帖子数",
+    "type": "int",
+    "default": 100,
+    "hint": "获取每个频道最新的 N 条帖子/消息。默认 100。"
+  }
+} 
