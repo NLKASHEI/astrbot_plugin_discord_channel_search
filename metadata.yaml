@@ -3,7 +3,7 @@ display_name: Discord频道帖子搜索
 short_desc: 搜索 Discord 指定频道的帖子，Agent 在用户询问推荐/攻略/卡组时自动调用
 desc: 为 AstrBot Agent 提供 Discord 频道帖子搜索能力。用户询问推荐、攻略、卡组等信息时，Agent 自动搜索配置的 Discord 频道帖子并返回匹配结果。与 LivingMemory 的 recall_long_term_memory 在 Agent 层面自动联动。
 help: 无需手动指令。在 WebUI 配置面板中添加要监控的 Discord 频道 ID 和名称，Agent 会在对话中自动调用 discord_channel_search 工具进行模糊搜索。
-version: v1.0.0
+version: v1.1.0
 author: NLKASHEI
 repo: https://github.com/NLKASHEI/astrbot_plugin_discord_channel_search
 astrbot_version: ">=4.24,<5"

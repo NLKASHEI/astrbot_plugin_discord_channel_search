@@ -253,7 +253,7 @@ class DiscordChannelSearchTool(FunctionTool):
     "astrbot_plugin_discord_channel_search",
     "NLKASHEI",
     "搜索 Discord 指定频道的帖子，Agent 自动调用",
-    "1.0.0",
+    "1.1.0",
     "https://github.com/NLKASHEI/astrbot_plugin_discord_channel_search",
 )
 class DiscordChannelSearchPlugin(Star):
