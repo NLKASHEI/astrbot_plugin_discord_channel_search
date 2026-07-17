@@ -189,12 +189,21 @@ class DiscordChannelSearchTool(FunctionTool):
                     "type": "string",
                     "description": "搜索关键词，空格分隔多个词进行模糊匹配，如'水系卡组'、'新手推荐 便宜'",
                 },
+                "max_results": {
+                    "type": "integer",
+                    "description": "返回结果数量，默认20。需要统计/汇总时设大些（50+，最多500）。",
+                },
+                "live": {
+                    "type": "boolean",
+                    "description": "是否实时拉取（绕过缓存）。需大量结果或最新数据时设为true，默认false使用缓存。",
+                },
             },
             "required": ["keyword"],
         }
     )
 
-    async def run(self, event: AstrMessageEvent, keyword: str, **kwargs: Any) -> str:
+    async def run(self, event: AstrMessageEvent, keyword: str,
+                  max_results: int = 20, live: bool = False, **kwargs: Any) -> str:
         _ = event
         kw = (keyword or "").strip()
         if not kw:
@@ -203,12 +212,18 @@ class DiscordChannelSearchTool(FunctionTool):
         if not self.cache_manager:
             return "插件未初始化完成，请稍后再试。"
 
-        # 首次调用时拉取帖子（仅尝试一次，避免 Discord 不可用时重复请求）
-        if not self.cache_manager.posts and not self._refresh_attempted:
-            self._refresh_attempted = True
-            await self._refresh()
+        limit = max(1, min(max_results, 500))
 
-        results = self.cache_manager.search(keyword=kw, limit=10)
+        # 实时模式：直接从 Discord 拉取最新数据再搜索
+        if live:
+            await self._refresh(limit)
+            results = self.cache_manager.search(keyword=kw, limit=limit)
+        else:
+            # 缓存模式：首次调用时拉取一次
+            if not self.cache_manager.posts and not self._refresh_attempted:
+                self._refresh_attempted = True
+                await self._refresh(self.max_posts)
+            results = self.cache_manager.search(keyword=kw, limit=limit)
 
         if not results:
             return (
@@ -242,7 +257,7 @@ class DiscordChannelSearchTool(FunctionTool):
 
         return "\n".join(lines)
 
-    async def _refresh(self) -> None:
+    async def _refresh(self, fetch_limit: int | None = None) -> None:
         if not self.get_discord_clients or not self.fetcher:
             return
         clients = self.get_discord_clients()
@@ -252,6 +267,7 @@ class DiscordChannelSearchTool(FunctionTool):
         if not hasattr(client, "is_ready") or not client.is_ready():
             return
 
+        limit = fetch_limit if fetch_limit else self.max_posts
         for ch_cfg in self.channels_config:
             ch_id_str = str(ch_cfg.get("channel_id", "")).strip()
             ch_name = str(ch_cfg.get("channel_name", ch_id_str)).strip()
@@ -261,7 +277,7 @@ class DiscordChannelSearchTool(FunctionTool):
                 ch_id = int(ch_id_str)
             except (ValueError, TypeError):
                 continue
-            posts = await self.fetcher.fetch(client, ch_id, self.max_posts)
+            posts = await self.fetcher.fetch(client, ch_id, limit)
             self.cache_manager.update(ch_id_str, ch_name, posts)
 
         self.cache_manager.save()
@@ -275,7 +291,7 @@ class DiscordChannelSearchTool(FunctionTool):
     "astrbot_plugin_discord_channel_search",
     "NLKASHEI",
     "搜索 Discord 指定频道的帖子，Agent 自动调用",
-    "1.2.0",
+    "1.4.0",
     "https://github.com/NLKASHEI/astrbot_plugin_discord_channel_search",
 )
 class DiscordChannelSearchPlugin(Star):
