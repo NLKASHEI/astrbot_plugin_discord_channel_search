@@ -89,14 +89,20 @@ class ChannelPostFetcher:
     """从 Discord 频道抓取帖子。"""
 
     @staticmethod
-    async def fetch(client: Any, channel_id: int, is_forum: bool, limit: int) -> list[dict[str, Any]]:
+    def _is_forum_channel(channel: Any) -> bool:
+        """自动判断是否为论坛频道。"""
+        name = type(channel).__name__
+        return "Forum" in name or "forum" in name.lower()
+
+    @staticmethod
+    async def fetch(client: Any, channel_id: int, limit: int) -> list[dict[str, Any]]:
         channel = client.get_channel(channel_id)
         if channel is None:
             logger.warning(f"[DiscordSearch] 频道 {channel_id} 未找到")
             return []
 
         try:
-            if is_forum:
+            if ChannelPostFetcher._is_forum_channel(channel):
                 return await ChannelPostFetcher._forum(channel, limit)
             else:
                 return await ChannelPostFetcher._history(channel, limit)
@@ -227,14 +233,13 @@ class DiscordChannelSearchTool(FunctionTool):
         for ch_cfg in self.channels_config:
             ch_id_str = str(ch_cfg.get("channel_id", "")).strip()
             ch_name = str(ch_cfg.get("channel_name", ch_id_str)).strip()
-            is_forum = bool(ch_cfg.get("is_forum", False))
             if not ch_id_str:
                 continue
             try:
                 ch_id = int(ch_id_str)
             except (ValueError, TypeError):
                 continue
-            posts = await self.fetcher.fetch(client, ch_id, is_forum, self.max_posts)
+            posts = await self.fetcher.fetch(client, ch_id, self.max_posts)
             self.cache_manager.update(ch_id_str, ch_name, posts)
 
         self.cache_manager.save()
@@ -358,7 +363,6 @@ class DiscordChannelSearchPlugin(Star):
         for ch_cfg in channels_config:
             ch_id_str = str(ch_cfg.get("channel_id", "")).strip()
             ch_name = str(ch_cfg.get("channel_name", ch_id_str)).strip()
-            is_forum = bool(ch_cfg.get("is_forum", False))
             if not ch_id_str:
                 continue
             try:
@@ -366,7 +370,7 @@ class DiscordChannelSearchPlugin(Star):
             except (ValueError, TypeError):
                 continue
             try:
-                posts = await self.fetcher.fetch(client, ch_id, is_forum, max_posts)
+                posts = await self.fetcher.fetch(client, ch_id, max_posts)
                 self.cache_manager.update(ch_id_str, ch_name, posts)
                 logger.info(f"[DiscordSearch] #{ch_name} 获取 {len(posts)} 条")
             except Exception as e:

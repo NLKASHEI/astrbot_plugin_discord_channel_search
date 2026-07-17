@@ -16,13 +16,7 @@
           "channel_name": {
             "description": "频道显示名称",
             "type": "string",
-            "hint": "用于在搜索结果中显示的频道名称，如卡组推荐、攻略分享"
-          },
-          "is_forum": {
-            "description": "是否为论坛频道",
-            "type": "bool",
-            "default": false,
-            "hint": "论坛频道的帖子标题是 Thread Name，普通频道用消息内容作为标题"
+            "hint": "用于在搜索结果中显示的频道名称，如卡组推荐、攻略分享。自动判断论坛/文字类型，无需手动选择。"
           }
         }
       }
