@@ -98,7 +98,7 @@ class ChannelPostFetcher:
     async def fetch(client: Any, channel_id: int, limit: int) -> list[dict[str, Any]]:
         channel = client.get_channel(channel_id)
         if channel is None:
-            logger.warning(f"[DiscordSearch] 频道 {channel_id} 未找到")
+            logger.debug(f"[DiscordSearch] 频道 {channel_id} 未找到（Bot 可能不在对应服务器中）")
             return []
 
         try:
@@ -107,7 +107,7 @@ class ChannelPostFetcher:
             else:
                 return await ChannelPostFetcher._history(channel, limit)
         except Exception as e:
-            logger.error(f"[DiscordSearch] 抓取频道 {channel_id} 失败: {e}", exc_info=True)
+            logger.debug(f"[DiscordSearch] 抓取频道 {channel_id} 失败: {e}")
             return []
 
     @staticmethod
@@ -291,7 +291,7 @@ class DiscordChannelSearchTool(FunctionTool):
     "astrbot_plugin_discord_channel_search",
     "NLKASHEI",
     "搜索 Discord 指定频道的帖子，Agent 自动调用",
-    "1.4.0",
+    "1.4.1",
     "https://github.com/NLKASHEI/astrbot_plugin_discord_channel_search",
 )
 class DiscordChannelSearchPlugin(Star):
@@ -410,7 +410,7 @@ class DiscordChannelSearchPlugin(Star):
             try:
                 posts = await self.fetcher.fetch(client, ch_id, max_posts)
                 self.cache_manager.update(ch_id_str, ch_name, posts)
-                logger.info(f"[DiscordSearch] #{ch_name} 获取 {len(posts)} 条")
+                logger.debug(f"[DiscordSearch] #{ch_name} 获取 {len(posts)} 条")
             except Exception as e:
                 self._log_rate_limited(f"[DiscordSearch] #{ch_name} 刷新失败: {e}")
 
