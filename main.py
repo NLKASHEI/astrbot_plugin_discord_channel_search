@@ -117,12 +117,23 @@ class ChannelPostFetcher:
             for thread in channel.threads:
                 if len(posts) >= limit:
                     break
+                # 使用 pycord 缓存的 starter_message，无需额外 API 调用
+                content = ""
+                reactions = 0
+                starter = getattr(thread, "starter_message", None)
+                if starter:
+                    content = (starter.content or "")[:500]
+                    reactions = sum(r.count for r in starter.reactions) if starter.reactions else 0
+
                 posts.append({
                     "id": str(thread.id),
                     "title": getattr(thread, "name", ""),
+                    "content": content,
                     "author": thread.owner.display_name if hasattr(thread, "owner") and thread.owner else "Unknown",
                     "created_at": thread.created_at.isoformat() if hasattr(thread, "created_at") and thread.created_at else "",
                     "url": getattr(thread, "jump_url", ""),
+                    "reactions": reactions,
+                    "message_count": getattr(thread, "message_count", 0),
                 })
         return posts
 
@@ -132,6 +143,7 @@ class ChannelPostFetcher:
         async for msg in channel.history(limit=limit):
             if not msg.content and not msg.attachments:
                 continue
+            reactions = sum(r.count for r in msg.reactions) if msg.reactions else 0
             posts.append({
                 "id": str(msg.id),
                 "title": msg.content[:100] + ("..." if len(msg.content) > 100 else ""),
@@ -139,6 +151,7 @@ class ChannelPostFetcher:
                 "author": msg.author.display_name if hasattr(msg.author, "display_name") else "Unknown",
                 "created_at": msg.created_at.isoformat(),
                 "url": msg.jump_url if hasattr(msg, "jump_url") else "",
+                "reactions": reactions,
             })
         return posts
 
@@ -210,12 +223,21 @@ class DiscordChannelSearchTool(FunctionTool):
             ch = post.get("channel_name", "") or "?"
             author = post.get("author", "") or "?"
             date = (post.get("created_at") or "")[:10]
+            content = (post.get("content") or "")[:200]
+            reactions = post.get("reactions", 0) or 0
+            msg_count = post.get("message_count", 0) or 0
 
             lines.append(f"{i}. {title}")
             if url:
-                lines.append(f"   {url}  |  #{ch}  |  {author}  |  {date}")
-            else:
-                lines.append(f"   #{ch}  |  {author}  |  {date}")
+                lines.append(f"   {url}")
+            meta_parts = [f"#{ch}", author, date]
+            if reactions:
+                meta_parts.append(f"反应{reactions}")
+            if msg_count:
+                meta_parts.append(f"💬{msg_count}")
+            lines.append(f"   {'  |  '.join(meta_parts)}")
+            if content:
+                lines.append(f"   > {content}")
             lines.append("")
 
         return "\n".join(lines)
@@ -253,7 +275,7 @@ class DiscordChannelSearchTool(FunctionTool):
     "astrbot_plugin_discord_channel_search",
     "NLKASHEI",
     "搜索 Discord 指定频道的帖子，Agent 自动调用",
-    "1.1.0",
+    "1.2.0",
     "https://github.com/NLKASHEI/astrbot_plugin_discord_channel_search",
 )
 class DiscordChannelSearchPlugin(Star):
